@@ -26,16 +26,9 @@ public class Main {
 		SparkConf conf = new SparkConf().setAppName("SparkApp").setMaster("local[*]");
 		JavaSparkContext sc = new JavaSparkContext(conf);
 
-		JavaRDD<String> originalLogMessages = sc.parallelize(inputData);
-
-
-		JavaPairRDD<String, Long> pairRDD =  originalLogMessages.mapToPair(rawValue -> {
-			String[] columns = rawValue.split(":");
-			String level = columns[0];
-			return new Tuple2<>(level, 1L);
-		});
-		JavaPairRDD<String, Long> sums = pairRDD.reduceByKey(Long::sum);
-		sums.collect().forEach(s -> LOGGER.info(s + ""));
+		sc.parallelize(inputData).mapToPair(rawValue -> new Tuple2<>(rawValue.split(":")[0], 1L))
+				.reduceByKey(Long::sum)
+				.collect().forEach(s -> LOGGER.info(s + ""));
 //		sums.collect().forEach(System.out::println);
 		sc.close();
 	}
