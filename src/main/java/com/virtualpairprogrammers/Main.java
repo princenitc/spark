@@ -22,6 +22,7 @@ public class Main {
 		JavaSparkContext sc = new JavaSparkContext(conf);
 
 		sc.parallelize(inputData).flatMap(value -> Arrays.asList(value.split(" ")).iterator())
+				.filter(word -> word.length() > 4)
 				.collect().forEach(s -> LOGGER.info(s + " "));
 		sc.close();
 	}
