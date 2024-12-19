@@ -31,7 +31,7 @@ public class ViewingFigures
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		
 		// Use true to use hardcoded data identical to that in the PDF guide.
-		boolean testMode = true;
+		boolean testMode = false;
 		
 		JavaPairRDD<Integer, Integer> viewData = setUpViewDataRdd(sc, testMode);
 		JavaPairRDD<Integer, Integer> chapterData = setUpChapterDataRdd(sc, testMode);
@@ -80,7 +80,7 @@ public class ViewingFigures
 			rawTitles.add(new Tuple2<>(3, "Content Creation is a Mug's Game"));
 			return sc.parallelizePairs(rawTitles);
 		}
-		return sc.textFile("src/main/resources/viewing figures/titles.csv")
+		return sc.textFile("/Users/prince/Downloads/Practicals/Starting Workspace/Project/src/main/resources/viewing figures/titles.csv")
 				                                    .mapToPair(commaSeparatedLine -> {
 														String[] cols = commaSeparatedLine.split(",");
 														return new Tuple2<Integer, String>(new Integer(cols[0]),cols[1]);
@@ -110,7 +110,7 @@ public class ViewingFigures
 			return sc.parallelizePairs(rawChapterData);
 		}
 
-		return sc.textFile("src/main/resources/viewing figures/chapters.csv")
+		return sc.textFile("/Users/prince/Downloads/Practicals/Starting Workspace/Project/src/main/resources/viewing figures/chapters.csv")
 													  .mapToPair(commaSeparatedLine -> {
 															String[] cols = commaSeparatedLine.split(",");
 															return new Tuple2<Integer, Integer>(new Integer(cols[0]), new Integer(cols[1]));
@@ -133,7 +133,7 @@ public class ViewingFigures
 			return  sc.parallelizePairs(rawViewData);
 		}
 		
-		return sc.textFile("src/main/resources/viewing figures/views-*.csv")
+		return sc.textFile("/Users/prince/Downloads/Practicals/Starting Workspace/Project/src/main/resources/viewing figures/views-*.csv")
 				     .mapToPair(commaSeparatedLine -> {
 				    	 String[] columns = commaSeparatedLine.split(",");
 				    	 return new Tuple2<Integer, Integer>(new Integer(columns[0]), new Integer(columns[1]));
