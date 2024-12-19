@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import scala.Tuple2;
 
 import java.util.Arrays;
-import java.util.List;
+
 
 public class Main {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
