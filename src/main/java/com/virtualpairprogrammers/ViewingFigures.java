@@ -3,12 +3,16 @@ package com.virtualpairprogrammers;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.io.output.BrokenWriter;
+import org.apache.hadoop.mapreduce.jobhistory.TaskUpdatedEvent;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 
+import org.apache.spark.api.java.Optional;
 import scala.Tuple2;
 
 /**
@@ -33,11 +37,38 @@ public class ViewingFigures
 		JavaPairRDD<Integer, Integer> chapterData = setUpChapterDataRdd(sc, testMode);
 		JavaPairRDD<Integer, String> titlesData = setUpTitlesDataRdd(sc, testMode);
 
-		// TODO - over to you!
-		
+		JavaPairRDD<Integer,Integer> courseChapterTotal = chapterData.mapToPair(tuple -> new Tuple2<Integer, Integer>(tuple._2, 1)).reduceByKey(Integer::sum);
+		JavaPairRDD<Integer,Integer> distinctViewData = viewData.distinct().mapToPair(tuple -> new Tuple2<>(tuple._2,tuple._1));
+		// Creating a joined view of the chapter, user and chapter course
+		JavaPairRDD<Integer, Tuple2<Integer, Integer>> joinedChapterAndViews = distinctViewData.join(chapterData);
+		// Since each RDD represents a chapter we can drop the chapterID ((userdID, Chapter), views)
+		JavaPairRDD<Tuple2<Integer, Integer>,Integer> droppedChapterRDD = joinedChapterAndViews.mapToPair(row -> new Tuple2<>(row._2, 1)).reduceByKey(Integer::sum);
+		// Now userID is not relevant so dropping userID (chapterId, views )
+		JavaPairRDD<Integer, Integer> chatperViewedData = droppedChapterRDD.mapToPair(row -> new Tuple2<>(row._1._2, row._2));
+		// We have chapter -> views for different users now we need to add the total count as per chapters.
+		JavaPairRDD<Integer, Tuple2<Integer, Optional<Integer>>> chapterViewsCount = chatperViewedData.leftOuterJoin(courseChapterTotal);
+		// Now we have got RDD with Chapter course data
+		// Let's create the RDD only with the percentage of views of total
+		JavaPairRDD<Integer, Double> chapterPercentage = chapterViewsCount.mapToPair(row -> new Tuple2<>(row._1, (row._2._1.doubleValue() / row._2._2.get())));
+		// Now adding the points as mentioned > 90% -> 10 points , 50-90 -> 4 Points , 25 - 50 -> 2 points, 0-25 -> 0 Points.
+		JavaPairRDD<Integer, Integer> finalRdd = chapterPercentage.mapToPair(row -> new Tuple2<>(row._1, finalPoint(row._2))).reduceByKey(Integer::sum);
+		// Now joining the tile
+		JavaPairRDD<Integer, Tuple2<Integer, String>> Rdd = finalRdd.join(titlesData).mapToPair(row -> new Tuple2<>(row._2._1, new Tuple2<>(row._1, row._2._2))).sortByKey(false);
+		Rdd.collect().forEach(System.out::println);
 		sc.close();
 	}
 
+
+	private static Integer finalPoint(double num) {
+		if(num >= .9)
+			return 10;
+		else if ((num >= .5)) {
+			return 4;
+		} else if ((num >= .25)) {
+			return 2;
+		}
+		return 0;
+	}
 	private static JavaPairRDD<Integer, String> setUpTitlesDataRdd(JavaSparkContext sc, boolean testMode) {
 		
 		if (testMode)
