@@ -33,3 +33,6 @@
   - Every time an action is performed spark goes to last written RDD results and uses that result for next action.
   - We can call cache method on results to have results in memory. It will be store in an object.
   - For same place also we can use persist instead of cache.
+- # miscellaneous 
+  - Spark only works with Serializable Object.
+  - To run the codes in local we need to pass the vm options as `--add-opens java.base/sun.nio.ch=ALL-UNNAMED`.
